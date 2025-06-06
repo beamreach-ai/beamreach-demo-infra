@@ -1,0 +1,36 @@
+
+
+
+# Example Dockerfile installing outdated and insecure versions (do not use in production)
+
+FROM python:3.6-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install outdated packages with known vulnerabilities
+
+RUN pip install \
+    Flask==0.12 \
+    Django==1.11 \
+    requests==2.18.0 \
+    numpy==1.14.0 \
+    pyyaml==3.13
+
+# Install outdated system packages (for demonstration only)
+RUN apt-get update && apt-get install -y \
+    openssl=1.0.1f-1ubuntu2 \
+    libssl1.0.0=1.0.1f-1ubuntu2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js and outdated npm packages
+RUN apt-get update && apt-get install -y curl && \
+    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g express@3.0.0 lodash@2.4.1
+
+# Copy application files
+COPY . /app
+
+# Default command
+CMD ["python", "app.py"]
