@@ -1,0 +1,46 @@
+name: Build and Push Dockerfiles to ECR
+
+on:
+  push:
+    paths:
+      - 'dockerfiles/**'
+      - '.github/workflows/build-dockerfiles.yml'
+  workflow_dispatch:
+
+env:
+  AWS_ACCOUNT_ID: 662863386798
+  AWS_REGION: eu-central-1
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActionsECRPushRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push all Dockerfiles to ECR
+        run: |
+          for file in dockerfiles/Dockerfile*; do
+            tag=$(basename "$file" | tr '[:upper:]' '[:lower:]' | sed 's/^dockerfile[.-]*//')
+            tag=${tag:-default}
+            IMAGE="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/demo-$tag"
+
+            echo "Building $file as $IMAGE"
+            docker build -f "$file" -t "$IMAGE" .
+            docker push "$IMAGE"
+          done
