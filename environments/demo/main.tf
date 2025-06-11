@@ -1,3 +1,4 @@
+```
 terraform {
   backend "s3" {
     bucket         = "beamreach-tf-states"
@@ -66,7 +67,10 @@ module "iam" {
   env    = local.env
 }
 
-
+resource "aws_iam_role_policy_attachment" "demo_123_s3_readonly" {
+  role       = "demo-123"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
 
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
@@ -75,4 +79,4 @@ resource "aws_iam_openid_connect_provider" "github" {
 
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # GitHub's trusted root CA
 }
-
+```
