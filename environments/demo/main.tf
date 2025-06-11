@@ -1,3 +1,4 @@
+```
 terraform {
   backend "s3" {
     bucket         = "beamreach-tf-states"
@@ -66,13 +67,55 @@ module "iam" {
   env    = local.env
 }
 
+resource "aws_db_subnet_group" "beamreach_demo" {
+  name       = "beamreach-demo-subnet-group"
+  subnet_ids = module.beamreach-demo-vpc.private_subnets
 
-
-resource "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-
-  client_id_list = ["sts.amazonaws.com"]
-
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # GitHub's trusted root CA
+  tags = {
+    Name        = "beamreach-demo-subnet-group"
+    Environment = local.env
+  }
 }
 
+resource "aws_security_group" "beamreach_demo_rds" {
+  name_prefix = "beamreach-demo-rds-"
+  vpc_id      = module.beamreach-demo-vpc.vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [module.beamreach-demo-vpc.vpc_cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "beamreach-demo-rds-sg"
+    Environment = local.env
+  }
+}
+
+resource "aws_db_instance" "beamreach_demo" {
+  identifier = "beamreach-demo"
+  
+  engine         = "postgres"
+  engine_version = "15.4"
+  instance_class = "db.t3.micro"
+  
+  allocated_storage     = 20
+  max_allocated_storage = 100
+  storage_type          = "gp2"
+  storage_encrypted     = true
+  
+  db_name  = "beamreach"
+  username = "postgres"
+  manage_master_user_password = true
+  
+  vpc_security_group_ids = [aws_security_group.beamreach_demo_rds.id]
+  db_subnet_group_name   = aws_db_subnet_group.beamreach
