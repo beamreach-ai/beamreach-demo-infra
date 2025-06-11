@@ -1,3 +1,4 @@
+```
 terraform {
   backend "s3" {
     bucket         = "beamreach-tf-states"
@@ -53,26 +54,66 @@ module "beamreach-demo-vpc" {
   }
 }
 
-
-module "demo-services" {
-  source    = "../../modules/ecs"
-  env       = local.env
+resource "aws_db_subnet_group" "beamreach_demo" {
+  name       = "beamreach-demo-subnet-group"
   subnet_ids = module.beamreach-demo-vpc.private_subnets
-  vpc_id     = module.beamreach-demo-vpc.vpc_id
+
+  tags = {
+    Name        = "beamreach-demo-subnet-group"
+    Environment = local.env
+  }
 }
 
-module "iam" {
-  source = "../../modules/iam"
-  env    = local.env
+resource "aws_security_group" "beamreach_demo_rds" {
+  name        = "beamreach-demo-rds-sg"
+  description = "Security group for beamreach-demo RDS instance"
+  vpc_id      = module.beamreach-demo-vpc.vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [module.beamreach-demo-vpc.vpc_cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "beamreach-demo-rds-sg"
+    Environment = local.env
+  }
 }
 
-
-
-resource "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-
-  client_id_list = ["sts.amazonaws.com"]
-
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # GitHub's trusted root CA
-}
-
+resource "aws_db_instance" "beamreach_demo" {
+  identifier = "beamreach-demo"
+  
+  engine         = "postgres"
+  engine_version = "15.4"
+  instance_class = "db.t3.micro"
+  
+  allocated_storage     = 20
+  max_allocated_storage = 100
+  storage_type          = "gp2"
+  storage_encrypted     = true
+  
+  db_name  = "beamreach"
+  username = "postgres"
+  manage_master_user_password = true
+  
+  backup_retention_period = 7
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "sun:04:00-sun:05:00"
+  
+  db_subnet_group_name   = aws_db_subnet_group.beamreach_demo.name
+  vpc_security_group_ids = [aws_security_group.beamreach_demo_rds.id]
+  
+  skip_final_snapshot = true
+  deletion_protection = false
+  
+  tags = {
+    Name        =
