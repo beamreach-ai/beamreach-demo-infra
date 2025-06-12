@@ -17,7 +17,7 @@ resource "aws_iam_role" "demo123" {
 
 resource "aws_iam_role_policy" "demo123_policy" {
   name = "demo123-policy"
-  role = aws_iam_role.github_radio_user.id
+  role = aws_iam_role.demo123.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -32,6 +32,16 @@ resource "aws_iam_role_policy" "demo123_policy" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:DescribeRepositories"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:ListBucket",
+          "s3:ListAllMyBuckets"
         ],
         Resource = "*"
       }
