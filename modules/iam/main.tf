@@ -22,7 +22,7 @@ resource "aws_iam_role_policy_attachment" "demo123_s3_readonly" {
 
 resource "aws_iam_role_policy" "demo123_policy" {
   name = "demo123-policy"
-  role = aws_iam_role.github_radio_user.id
+  role = aws_iam_role.demo123.id
 
   policy = jsonencode({
     Version = "2012-10-17",
