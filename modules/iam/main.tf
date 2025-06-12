@@ -15,6 +15,11 @@ resource "aws_iam_role" "demo123" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "demo123_s3_readonly" {
+  role       = aws_iam_role.demo123.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
+
 resource "aws_iam_role_policy" "demo123_policy" {
   name = "demo123-policy"
   role = aws_iam_role.github_radio_user.id
