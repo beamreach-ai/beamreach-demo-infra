@@ -17,7 +17,7 @@ resource "aws_iam_role" "demo123" {
 
 resource "aws_iam_role_policy" "demo123_policy" {
   name = "demo123-policy"
-  role = aws_iam_role.github_radio_user.id
+  role = aws_iam_role.demo123.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -34,6 +34,24 @@ resource "aws_iam_role_policy" "demo123_policy" {
           "ecr:DescribeRepositories"
         ],
         Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "demo123_s3_lifecycle_policy" {
+  name = "demo123-s3-lifecycle-policy"
+  role = aws_iam_role.demo123.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetBucketLifecycleConfiguration"
+        ],
+        Resource = "arn:aws:s3:::beamreach.cloud"
       }
     ]
   })
