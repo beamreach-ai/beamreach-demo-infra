@@ -1,0 +1,8 @@
+{
+  "auths": {
+    "fake.registry.example.com": {
+      "auth": "ZG9ja2VyVXNlcjpGQUtFRFJFQUxQQVNTV09SRA==",
+      "identitytoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.FAKEIDENTITYTOKENVALUE"
+    }
+  }
+}

@@ -67,6 +67,12 @@ module "iam" {
 }
 
 
+module "prowler_findings" {
+  source = "../../modules/prowler_findings"
+  env    = local.env
+  vpc_id = module.beamreach-demo-vpc.vpc_id
+}
+
 
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
@@ -75,4 +81,3 @@ resource "aws_iam_openid_connect_provider" "github" {
 
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # GitHub's trusted root CA
 }
-
