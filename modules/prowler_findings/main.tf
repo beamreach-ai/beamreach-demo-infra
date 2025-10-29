@@ -21,6 +21,16 @@ resource "aws_s3_bucket" "public_demo" {
   }
 }
 
+resource "aws_s3_bucket_server_side_encryption_configuration" "public_demo" {
+  bucket = aws_s3_bucket.public_demo.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "public_demo" {
   bucket                  = aws_s3_bucket.public_demo.id
   block_public_acls       = false
@@ -44,6 +54,31 @@ resource "aws_s3_bucket_policy" "public_read" {
       }
     ]
   })
+}
+
+resource "aws_s3_bucket" "website" {
+  bucket        = "beamreach-${var.env}-website-${random_pet.suffix.id}"
+  force_destroy = true
+
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
+  }
+
+  tags = {
+    Environment = var.env
+    Purpose     = "prowler-website-demo"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "website" {
+  bucket = aws_s3_bucket.website.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
 }
 
 resource "aws_security_group" "open_ssh" {
@@ -109,21 +144,6 @@ resource "aws_iam_account_password_policy" "weak" {
   hard_expiry                    = false
   max_password_age               = 0
   password_reuse_prevention      = 0
-}
-
-resource "aws_s3_bucket" "website" {
-  bucket        = "beamreach-${var.env}-website-${random_pet.suffix.id}"
-  force_destroy = true
-
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
-
-  tags = {
-    Environment = var.env
-    Purpose     = "prowler-website-demo"
-  }
 }
 
 resource "aws_security_group" "open_all_ports" {
