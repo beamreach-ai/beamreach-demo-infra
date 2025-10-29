@@ -18,15 +18,15 @@ RUN pip install \
     pyyaml==3.13
 
 # Install outdated system packages (for demonstration only)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl=1.0.1f-1ubuntu2 \
     libssl1.0.0=1.0.1f-1ubuntu2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js and outdated npm packages
-RUN apt-get update && apt-get install -y curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y --no-install-recommends nodejs && \
     npm install -g express@3.0.0 lodash@2.4.1
 
 # Copy application files
