@@ -82,12 +82,15 @@ resource "aws_ecs_service" "demo_service" {
 
 resource "aws_ecr_repository" "default" {
   name = "demo-multistage"
+  image_tag_mutability = "IMMUTABLE"
 }
 
 resource "aws_ecr_repository" "secrets" {
   name = "demo-secrets"
+  image_tag_mutability = "IMMUTABLE"
 }
 
 resource "aws_ecr_repository" "versions" {
   name = "demo-versions"
+  image_tag_mutability = "IMMUTABLE"
 }
