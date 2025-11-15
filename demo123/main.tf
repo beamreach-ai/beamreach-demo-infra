@@ -53,5 +53,5 @@ resource "aws_security_group" "open_sg" {
 
 resource "aws_sns_topic" "unencrypted_topic" {
   name = "demo-unencrypted-topic"
-  # No kms_master_key_id specified — this makes it unencrypted
+  kms_master_key_id = "alias/aws/sns"  # Using AWS managed KMS key for SNS
 }
