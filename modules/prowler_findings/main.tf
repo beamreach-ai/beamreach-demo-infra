@@ -262,6 +262,24 @@ resource "aws_ssm_parameter" "plaintext_secret" {
   }
 }
 
+# Create a Secrets Manager secret for the API key
+resource "aws_secretsmanager_secret" "api_key" {
+  name        = "/${var.env}/prowler/api_key"
+  description = "API key for Prowler security scanning tool"
+
+  tags = {
+    Environment = var.env
+    Purpose     = "prowler-demo"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "api_key" {
+  secret_id     = aws_secretsmanager_secret.api_key.id
+  secret_string = jsonencode({
+    api_key = "api-key-${var.env}-123456"
+  })
+}
+
 resource "aws_ecs_task_definition" "insecure" {
   family                   = "${var.env}-insecure-task"
   requires_compatibilities = ["EC2"]
@@ -277,12 +295,14 @@ resource "aws_ecs_task_definition" "insecure" {
       command   = ["sleep", "3600"]
       environment = [
         {
-          name  = "HARDCODED_API_KEY"
-          value = "api-key-${var.env}-123456"
-        },
-        {
           name  = "DB_PASSWORD"
           value = "P@ssw0rd123"
+        }
+      ],
+      secrets = [
+        {
+          name      = "HARDCODED_API_KEY"
+          valueFrom = aws_secretsmanager_secret.api_key.arn
         }
       ]
     }
