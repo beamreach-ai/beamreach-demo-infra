@@ -16,7 +16,7 @@ provider "aws" {
 
 locals {
   env        = "public-demo"
-  aws_region = "us-east-1"
+  aws_region = "eu-central-1"
   account    = "682684724085"
   vpc_name = "beamreach-demo-vpc"
 }
@@ -59,6 +59,14 @@ module "demo-services" {
   env       = local.env
   subnet_ids = module.beamreach-demo-vpc.private_subnets
   vpc_id     = module.beamreach-demo-vpc.vpc_id
+}
+
+module "infra_map_demo" {
+  source             = "../../modules/infra_map_demo"
+  env                = local.env
+  vpc_id             = module.beamreach-demo-vpc.vpc_id
+  private_subnet_ids = module.beamreach-demo-vpc.private_subnets
+  public_subnet_ids  = module.beamreach-demo-vpc.public_subnets
 }
 
 module "iam" {
