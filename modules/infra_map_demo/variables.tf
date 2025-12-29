@@ -69,11 +69,11 @@ variable "target_group_name" {
 variable "alb_security_group_name" {
   description = "Name of the ALB security group."
   type        = string
-  default     = "sg-demo-map-alb"
+  default     = "demo-map-alb-sg"
 }
 
 variable "ecs_security_group_name" {
   description = "Name of the ECS tasks security group."
   type        = string
-  default     = "sg-demo-map-ecs"
+  default     = "demo-map-ecs-sg"
 }

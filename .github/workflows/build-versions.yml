@@ -1,0 +1,41 @@
+name: Build Dockerfile.versions
+
+on:
+  push:
+    paths:
+      - 'dockerfiles/Dockerfile.versions'
+      - '.github/workflows/build-versions.yml'
+  workflow_dispatch:
+
+env:
+  AWS_ACCOUNT_ID: 682684724085
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: demo-versions
+  IMAGE_TAG: latest
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-radio-user-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          IMAGE_URI: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+        run: |
+          docker build -f dockerfiles/Dockerfile.versions -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"

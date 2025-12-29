@@ -16,9 +16,44 @@ provider "aws" {
 
 locals {
   env        = "public-demo"
-  aws_region = "eu-central-1"
+  aws_region = "us-east-1"
   account    = "682684724085"
-  vpc_name = "beamreach-demo-vpc"
+  vpc_name   = "beamreach-demo-vpc"
+  docker_images = {
+    multistage = {
+      repo_name  = "demo-multistage"
+      dockerfile = "dockerfiles/Dockerfile.multistage"
+    }
+    versions = {
+      repo_name  = "demo-versions"
+      dockerfile = "dockerfiles/Dockerfile.versions"
+    }
+    secrets = {
+      repo_name  = "demo-secrets"
+      dockerfile = "dockerfiles/Dockerfile.secrets"
+    }
+  }
+}
+
+resource "aws_ecr_repository" "docker_images" {
+  for_each = local.docker_images
+
+  name                 = each.value.repo_name
+  image_tag_mutability = "MUTABLE"
+  force_delete         = true
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  tags = {
+    Environment = local.env
+    Dockerfile  = each.value.dockerfile
+  }
 }
 
 
@@ -32,9 +67,9 @@ module "beamreach-demo-vpc" {
   private_subnets = ["172.99.2.0/24", "172.99.4.0/24"]
   public_subnets  = ["172.99.1.0/24", "172.99.3.0/24"]
 
-  enable_ipv6            = false
-  enable_nat_gateway     = false
-  single_nat_gateway     = false
+  enable_ipv6        = false
+  enable_nat_gateway = false
+  single_nat_gateway = false
 
   public_subnet_tags = {
     Name = "${local.env}-public"
@@ -55,10 +90,13 @@ module "beamreach-demo-vpc" {
 
 
 module "demo-services" {
-  source    = "../../modules/ecs"
-  env       = local.env
-  subnet_ids = module.beamreach-demo-vpc.private_subnets
-  vpc_id     = module.beamreach-demo-vpc.vpc_id
+  source            = "../../modules/ecs"
+  env               = local.env
+  subnet_ids        = module.beamreach-demo-vpc.private_subnets
+  public_subnet_ids = module.beamreach-demo-vpc.public_subnets
+  vpc_id            = module.beamreach-demo-vpc.vpc_id
+  container_image   = "${aws_ecr_repository.docker_images["multistage"].repository_url}:latest"
+  alarm_emails      = ["alerts@example.com"]
 }
 
 module "infra_map_demo" {
@@ -67,6 +105,14 @@ module "infra_map_demo" {
   vpc_id             = module.beamreach-demo-vpc.vpc_id
   private_subnet_ids = module.beamreach-demo-vpc.private_subnets
   public_subnet_ids  = module.beamreach-demo-vpc.public_subnets
+  container_image    = "${aws_ecr_repository.docker_images["versions"].repository_url}:latest"
+}
+
+module "infra_map_relations" {
+  source           = "../../modules/infra_map_relations"
+  env              = local.env
+  ecs_cluster_name = module.infra_map_demo.ecs_cluster_name
+  ecs_service_name = module.infra_map_demo.ecs_service_name
 }
 
 module "iam" {
@@ -76,9 +122,10 @@ module "iam" {
 
 
 module "prowler_findings" {
-  source = "../../modules/prowler_findings"
-  env    = local.env
-  vpc_id = module.beamreach-demo-vpc.vpc_id
+  source              = "../../modules/prowler_findings"
+  env                 = local.env
+  vpc_id              = module.beamreach-demo-vpc.vpc_id
+  insecure_task_image = "${aws_ecr_repository.docker_images["secrets"].repository_url}:latest"
 }
 
 

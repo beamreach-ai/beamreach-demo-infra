@@ -244,7 +244,7 @@ resource "aws_iam_group_policy" "legacy_admins_policy" {
 }
 
 resource "aws_iam_user_group_membership" "over_permissive_membership" {
-  user  = aws_iam_user.over_permissive.name
+  user = aws_iam_user.over_permissive.name
   groups = [
     aws_iam_group.legacy_admins.name
   ]
@@ -272,7 +272,7 @@ resource "aws_ecs_task_definition" "insecure" {
   container_definitions = jsonencode([
     {
       name      = "insecure-container"
-      image     = "public.ecr.aws/amazonlinux/amazonlinux:latest"
+      image     = var.insecure_task_image
       essential = true
       command   = ["sleep", "3600"]
       environment = [
