@@ -88,6 +88,17 @@ module "beamreach-demo-vpc" {
   }
 }
 
+module "finops_demo" {
+  source = "../../modules/finops_demo"
+
+  env                 = local.env
+  vpc_id              = module.beamreach-demo-vpc.vpc_id
+  vpc_cidr_block      = "172.99.0.0/16"
+  public_subnet_ids   = module.beamreach-demo-vpc.public_subnets
+  private_subnet_ids  = module.beamreach-demo-vpc.private_subnets
+  create_fargate_demo = false
+}
+
 
 module "demo-services" {
   source            = "../../modules/ecs"
@@ -126,6 +137,31 @@ module "prowler_findings" {
   env                 = local.env
   vpc_id              = module.beamreach-demo-vpc.vpc_id
   insecure_task_image = "${aws_ecr_repository.docker_images["secrets"].repository_url}:latest"
+}
+
+resource "aws_iam_role" "beamreach_compass" {
+  name = "BeamreachCompassRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        AWS = "arn:aws:iam::662863386798:root"
+      }
+      Action = "sts:AssumeRole"
+      Condition = {
+        StringEquals = {
+          "sts:ExternalId" = "beamreach-compass-qwmTsJGDdnga5iqcSwRWpGIy"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "beamreach_compass_readonly" {
+  role       = aws_iam_role.beamreach_compass.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
 
