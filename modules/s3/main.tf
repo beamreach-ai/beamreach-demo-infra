@@ -1,5 +1,33 @@
+resource "aws_kms_key" "s3_encryption_key" {
+  description             = "KMS key for S3 bucket encryption"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  tags = {
+    Name        = "beamreach-${var.env}-s3-key"
+    Environment = var.env
+  }
+}
+
+resource "aws_kms_alias" "s3_encryption_key_alias" {
+  name          = "alias/beamreach-${var.env}-s3-key"
+  target_key_id = aws_kms_key.s3_encryption_key.key_id
+}
+
 resource "aws_s3_bucket" "secure_bucket" {
   bucket = "beamreach-${var.env}-secure"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "secure_bucket_encryption" {
+  bucket = aws_s3_bucket.secure_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+    bucket_key_enabled = true
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "secure_block" {
@@ -12,6 +40,18 @@ resource "aws_s3_bucket_public_access_block" "secure_block" {
 
 resource "aws_s3_bucket" "insecure_bucket" {
   bucket = "beamreach-${var.env}-insecure"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "insecure_bucket_encryption" {
+  bucket = aws_s3_bucket.insecure_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+    bucket_key_enabled = true
+  }
 }
 
 resource "aws_s3_bucket_ownership_controls" "insecure_controls" {
@@ -32,6 +72,18 @@ resource "aws_s3_bucket_public_access_block" "insecure_block" {
 
 resource "aws_s3_bucket" "logging_bucket" {
   bucket = "beamreach-${var.env}-logging"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "logging_bucket_encryption" {
+  bucket = aws_s3_bucket.logging_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+    bucket_key_enabled = true
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "logging_block" {
