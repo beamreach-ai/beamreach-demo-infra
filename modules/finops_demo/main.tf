@@ -19,39 +19,8 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
-resource "aws_ebs_volume" "orphan_gp2" {
-  availability_zone = data.aws_subnet.private_az.availability_zone
-  size              = var.gp2_volume_size_gb
-  type              = "gp2"
-  encrypted         = true
-
-  tags = merge(
-    local.tags,
-    {
-      Name         = "${local.name_prefix}-gp2-orphan"
-      FinOpsSignal = "unattached-gp2"
-    },
-  )
-}
-
 data "aws_subnet" "private_az" {
   id = var.private_subnet_ids[0]
-}
-
-resource "aws_ebs_snapshot" "orphan_gp2" {
-  count = var.snapshot_count
-
-  volume_id    = aws_ebs_volume.orphan_gp2.id
-  description  = "FinOps demo snapshot ${count.index + 1} for ${aws_ebs_volume.orphan_gp2.id}"
-  storage_tier = "standard"
-
-  tags = merge(
-    local.tags,
-    {
-      Name         = "${local.name_prefix}-snapshot-${count.index + 1}"
-      FinOpsSignal = "snapshot-sprawl"
-    },
-  )
 }
 
 resource "aws_s3_bucket" "waste" {
