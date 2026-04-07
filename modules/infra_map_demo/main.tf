@@ -74,45 +74,51 @@ resource "aws_security_group" "ecs_tasks" {
   tags = merge(local.tags, { Name = var.ecs_security_group_name })
 }
 
-resource "aws_lb" "demo" {
-  name               = var.alb_name
-  load_balancer_type = "application"
-  internal           = false
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = var.public_subnet_ids
-  tags               = local.tags
-}
+# FinOps: Disabled idle ALB with no healthy targets
+# Finding: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:demo-map-alb
+# Estimated savings: ~$16/month (~$197/year)
+# To restore: uncomment the aws_lb.demo, aws_lb_target_group.demo, aws_lb_listener.http
+# resources below and restore the load_balancer block in aws_ecs_service.api
 
-resource "aws_lb_target_group" "demo" {
-  name        = var.target_group_name
-  port        = 80
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+# resource "aws_lb" "demo" {
+#   name               = var.alb_name
+#   load_balancer_type = "application"
+#   internal           = false
+#   security_groups    = [aws_security_group.alb.id]
+#   subnets            = var.public_subnet_ids
+#   tags               = local.tags
+# }
 
-  health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
-    timeout             = 5
-    matcher             = "200"
-  }
+# resource "aws_lb_target_group" "demo" {
+#   name        = var.target_group_name
+#   port        = 80
+#   protocol    = "HTTP"
+#   target_type = "ip"
+#   vpc_id      = var.vpc_id
+#
+#   health_check {
+#     path                = "/"
+#     protocol            = "HTTP"
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     interval            = 30
+#     timeout             = 5
+#     matcher             = "200"
+#   }
+#
+#   tags = local.tags
+# }
 
-  tags = local.tags
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.demo.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.demo.arn
-  }
-}
+# resource "aws_lb_listener" "http" {
+#   load_balancer_arn = aws_lb.demo.arn
+#   port              = 80
+#   protocol          = "HTTP"
+#
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.demo.arn
+#   }
+# }
 
 resource "aws_iam_role" "ecs_task_execution" {
   name = "${var.env}-map-demo-ecs-task-execution"
@@ -153,8 +159,8 @@ resource "aws_ecs_task_definition" "api" {
 
   container_definitions = jsonencode([
     {
-      name  = local.container_name
-      image = var.container_image
+      name      = local.container_name
+      image     = var.container_image
       essential = true
       portMappings = [
         {
@@ -187,13 +193,14 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = false
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.demo.arn
-    container_name   = local.container_name
-    container_port   = 80
-  }
-
-  depends_on = [aws_lb_listener.http]
+  # FinOps: load_balancer block removed - ALB disabled due to no healthy targets
+  # To restore, uncomment the ALB resources above and add:
+  # load_balancer {
+  #   target_group_arn = aws_lb_target_group.demo.arn
+  #   container_name   = local.container_name
+  #   container_port   = 80
+  # }
+  # depends_on = [aws_lb_listener.http]
 
   tags = local.tags
 }

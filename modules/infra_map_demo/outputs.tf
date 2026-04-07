@@ -18,10 +18,11 @@ output "ecs_service_name" {
   value       = aws_ecs_service.api.name
 }
 
-output "alb_dns_name" {
-  description = "DNS name of the Application Load Balancer."
-  value       = aws_lb.demo.dns_name
-}
+# FinOps: ALB disabled - output commented out
+# output "alb_dns_name" {
+#   description = "DNS name of the Application Load Balancer."
+#   value       = aws_lb.demo.dns_name
+# }
 
 output "security_group_ids" {
   description = "Security group IDs for the ALB and ECS tasks."
