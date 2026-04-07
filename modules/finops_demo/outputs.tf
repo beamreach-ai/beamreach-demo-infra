@@ -1,11 +1,6 @@
 output "inventory" {
   description = "Inventory of the FinOps demo resources."
   value = {
-    ebs = {
-      orphan_gp2_volume_id = aws_ebs_volume.orphan_gp2.id
-      orphan_gp2_size_gb   = aws_ebs_volume.orphan_gp2.size
-      snapshot_ids         = [for snapshot in aws_ebs_snapshot.orphan_gp2 : snapshot.id]
-    }
     s3 = {
       waste_bucket = aws_s3_bucket.waste.bucket
       good_bucket  = aws_s3_bucket.good.bucket
