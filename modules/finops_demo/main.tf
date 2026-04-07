@@ -1,6 +1,10 @@
 locals {
   name_prefix = "${var.env}-finops"
 
+  # NOTE: Idle ALB resources (aws_lb.idle, aws_lb_listener.idle_http, aws_lb_target_group.idle,
+  # aws_security_group.idle_alb) were removed due to FinOps finding: no healthy targets detected.
+  # Savings: ~$16.43/month (~$197/year). Finding ID: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-finops-idle-alb
+
   tags = merge(
     {
       Environment = var.env
@@ -115,11 +119,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "good" {
     }
   }
 }
-
-# FinOps Remediation: Removed idle ALB resources (aws_lb.idle, aws_lb_target_group.idle,
-# aws_lb_listener.idle_http, aws_security_group.idle_alb) that had no healthy targets.
-# Estimated savings: ~$16.43/month (~$197/year).
-# Finding ID: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-finops-idle-alb
 
 resource "aws_security_group" "fargate" {
   count = var.create_fargate_demo ? 1 : 0

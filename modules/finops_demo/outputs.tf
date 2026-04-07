@@ -10,7 +10,7 @@ output "inventory" {
       waste_bucket = aws_s3_bucket.waste.bucket
       good_bucket  = aws_s3_bucket.good.bucket
     }
-    # alb output removed - idle ALB resources were cleaned up (no healthy targets)
+    # alb output removed - idle ALB resources were deleted (FinOps finding: no healthy targets)
     fargate = var.create_fargate_demo ? {
       cluster_name = aws_ecs_cluster.fargate[0].name
       service_name = aws_ecs_service.fargate[0].name
