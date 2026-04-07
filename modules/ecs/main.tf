@@ -93,42 +93,46 @@ resource "aws_ecs_cluster" "demo_cluster" {
   name = "${var.env}-cluster"
 }
 
-resource "aws_lb" "demo" {
-  name               = "${var.env}-demo-alb"
-  load_balancer_type = "application"
-  internal           = false
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = var.public_subnet_ids
-}
+# FINOPS: Commented out - ALB has no healthy targets (finding: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-demo-alb)
+# Estimated savings: ~$16.43/month (~$197/year). Uncomment to re-enable when needed.
+# resource "aws_lb" "demo" {
+#   name               = "${var.env}-demo-alb"
+#   load_balancer_type = "application"
+#   internal           = false
+#   security_groups    = [aws_security_group.alb.id]
+#   subnets            = var.public_subnet_ids
+# }
 
-resource "aws_lb_target_group" "demo" {
-  name        = "${var.env}-demo-tg"
-  port        = var.container_port
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+# FINOPS: Commented out - Target group unused (ALB disabled due to no healthy targets)
+# resource "aws_lb_target_group" "demo" {
+#   name        = "${var.env}-demo-tg"
+#   port        = var.container_port
+#   protocol    = "HTTP"
+#   target_type = "ip"
+#   vpc_id      = var.vpc_id
+#
+#   health_check {
+#     path                = "/"
+#     protocol            = "HTTP"
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     interval            = 30
+#     timeout             = 5
+#     matcher             = "200-399"
+#   }
+# }
 
-  health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
-    timeout             = 5
-    matcher             = "200-399"
-  }
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.demo.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.demo.arn
-  }
-}
+# FINOPS: Commented out - Listener unused (ALB disabled due to no healthy targets)
+# resource "aws_lb_listener" "http" {
+#   load_balancer_arn = aws_lb.demo.arn
+#   port              = 80
+#   protocol          = "HTTP"
+#
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.demo.arn
+#   }
+# }
 
 resource "aws_ecs_task_definition" "demo_task" {
   family                   = "${var.env}-task"
@@ -181,13 +185,14 @@ resource "aws_ecs_service" "demo_service" {
     assign_public_ip = false
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.demo.arn
-    container_name   = "demo-container"
-    container_port   = var.container_port
-  }
-
-  depends_on = [aws_lb_listener.http]
+  # FINOPS: Load balancer attachment removed - ALB disabled due to no healthy targets
+  # To re-enable, uncomment the ALB resources above and restore this block:
+  # load_balancer {
+  #   target_group_arn = aws_lb_target_group.demo.arn
+  #   container_name   = "demo-container"
+  #   container_port   = var.container_port
+  # }
+  # depends_on = [aws_lb_listener.http]
 }
 
 resource "aws_sns_topic" "service_alerts" {
