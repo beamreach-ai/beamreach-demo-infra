@@ -18,18 +18,6 @@ resource "aws_secretsmanager_secret_version" "app_config" {
   secret_string = var.secret_payload
 }
 
-/*
- * ============================================================================
- * DISABLED: ALB and related resources commented out due to FinOps finding
- * Reason: Load balancer has no healthy targets - wasting ~$16.43/month
- * Finding ID: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:demo-map-alb
- * Date: 2026-04-07
- * To re-enable: Uncomment the resources below and restore the load_balancer
- * block in aws_ecs_service.api when the service is ready to receive traffic.
- * ============================================================================
- */
-
-/*
 resource "aws_security_group" "alb" {
   name        = var.alb_security_group_name
   description = "Allow public web traffic to the infra map demo ALB."
@@ -61,22 +49,19 @@ resource "aws_security_group" "alb" {
 
   tags = merge(local.tags, { Name = var.alb_security_group_name })
 }
-*/
 
 resource "aws_security_group" "ecs_tasks" {
   name        = var.ecs_security_group_name
   description = "Allow ALB traffic to reach the infra map demo ECS tasks."
   vpc_id      = var.vpc_id
 
-  # NOTE: ALB ingress rule commented out because ALB is disabled (no healthy targets)
-  # Uncomment when ALB is re-enabled:
-  # ingress {
-  #   description     = "Allow HTTP from ALB"
-  #   from_port       = 80
-  #   to_port         = 80
-  #   protocol        = "tcp"
-  #   security_groups = [aws_security_group.alb.id]
-  # }
+  ingress {
+    description     = "Allow HTTP from ALB"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
 
   egress {
     description = "Allow all outbound"
@@ -89,47 +74,51 @@ resource "aws_security_group" "ecs_tasks" {
   tags = merge(local.tags, { Name = var.ecs_security_group_name })
 }
 
-/*
-resource "aws_lb" "demo" {
-  name               = var.alb_name
-  load_balancer_type = "application"
-  internal           = false
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = var.public_subnet_ids
-  tags               = local.tags
-}
+# FinOps: Disabled idle ALB with no healthy targets
+# Finding: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:demo-map-alb
+# Estimated savings: ~$16/month (~$197/year)
+# To restore: uncomment the aws_lb.demo, aws_lb_target_group.demo, aws_lb_listener.http
+# resources below and restore the load_balancer block in aws_ecs_service.api
 
-resource "aws_lb_target_group" "demo" {
-  name        = var.target_group_name
-  port        = 80
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+# resource "aws_lb" "demo" {
+#   name               = var.alb_name
+#   load_balancer_type = "application"
+#   internal           = false
+#   security_groups    = [aws_security_group.alb.id]
+#   subnets            = var.public_subnet_ids
+#   tags               = local.tags
+# }
 
-  health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
-    timeout             = 5
-    matcher             = "200"
-  }
+# resource "aws_lb_target_group" "demo" {
+#   name        = var.target_group_name
+#   port        = 80
+#   protocol    = "HTTP"
+#   target_type = "ip"
+#   vpc_id      = var.vpc_id
+#
+#   health_check {
+#     path                = "/"
+#     protocol            = "HTTP"
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     interval            = 30
+#     timeout             = 5
+#     matcher             = "200"
+#   }
+#
+#   tags = local.tags
+# }
 
-  tags = local.tags
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.demo.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.demo.arn
-  }
-}
-*/
+# resource "aws_lb_listener" "http" {
+#   load_balancer_arn = aws_lb.demo.arn
+#   port              = 80
+#   protocol          = "HTTP"
+#
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.demo.arn
+#   }
+# }
 
 resource "aws_iam_role" "ecs_task_execution" {
   name = "${var.env}-map-demo-ecs-task-execution"
@@ -204,14 +193,13 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = false
   }
 
-  # NOTE: load_balancer block commented out because ALB is disabled (no healthy targets)
-  # Uncomment when ALB is re-enabled:
+  # FinOps: load_balancer block removed - ALB disabled due to no healthy targets
+  # To restore, uncomment the ALB resources above and add:
   # load_balancer {
   #   target_group_arn = aws_lb_target_group.demo.arn
   #   container_name   = local.container_name
   #   container_port   = 80
   # }
-  #
   # depends_on = [aws_lb_listener.http]
 
   tags = local.tags
