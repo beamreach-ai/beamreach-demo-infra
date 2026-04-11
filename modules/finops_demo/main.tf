@@ -1,6 +1,5 @@
 locals {
-  name_prefix      = "${var.env}-finops"
-  idle_alb_subnets = var.private_subnet_ids
+  name_prefix = "${var.env}-finops"
 
   tags = merge(
     {
@@ -117,83 +116,16 @@ resource "aws_s3_bucket_lifecycle_configuration" "good" {
   }
 }
 
-resource "aws_security_group" "idle_alb" {
-  name        = "${local.name_prefix}-idle-alb"
-  description = "Internal security group for the idle ALB FinOps demo."
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description = "Allow HTTP from within the VPC"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr_block]
-  }
-
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(local.tags, { Name = "${local.name_prefix}-idle-alb" })
-}
-
-resource "aws_lb" "idle" {
-  name               = "${local.name_prefix}-idle-alb"
-  load_balancer_type = "application"
-  internal           = true
-  security_groups    = [aws_security_group.idle_alb.id]
-  subnets            = local.idle_alb_subnets
-
-  tags = merge(
-    local.tags,
-    {
-      Name         = "${local.name_prefix}-idle-alb"
-      FinOpsSignal = "idle-load-balancer"
-    },
-  )
-}
-
-resource "aws_lb_target_group" "idle" {
-  name        = "${local.name_prefix}-idle-tg"
-  port        = 80
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
-    timeout             = 5
-    protocol            = "HTTP"
-    path                = "/"
-    matcher             = "200-399"
-  }
-
-  tags = merge(
-    local.tags,
-    {
-      Name         = "${local.name_prefix}-idle-tg"
-      FinOpsSignal = "unused-target-group"
-    },
-  )
-}
-
-resource "aws_lb_listener" "idle_http" {
-  load_balancer_arn = aws_lb.idle.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.idle.arn
-  }
-}
+# -----------------------------------------------------------------------------
+# REMOVED: Idle ALB Resources (aws_lb.idle, aws_lb_target_group.idle,
+#          aws_lb_listener.idle_http, aws_security_group.idle_alb)
+#
+# Reason: ALB had no healthy targets and was wasting ~$16.43/month (~$197/year)
+# Finding ID: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-finops-idle-alb
+# Resource ARN: arn:aws:elasticloadbalancing:us-east-1:682684724085:loadbalancer/app/public-demo-finops-idle-alb/a702c914581a967f
+#
+# To restore: Revert this change and reapply Terraform configuration.
+# -----------------------------------------------------------------------------
 
 resource "aws_security_group" "fargate" {
   count = var.create_fargate_demo ? 1 : 0

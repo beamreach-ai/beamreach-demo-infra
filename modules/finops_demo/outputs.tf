@@ -10,12 +10,7 @@ output "inventory" {
       waste_bucket = aws_s3_bucket.waste.bucket
       good_bucket  = aws_s3_bucket.good.bucket
     }
-    alb = {
-      arn          = aws_lb.idle.arn
-      dns_name     = aws_lb.idle.dns_name
-      target_group = aws_lb_target_group.idle.arn
-      listener_arn = aws_lb_listener.idle_http.arn
-    }
+    # alb outputs removed - idle ALB resources deleted (no healthy targets)
     fargate = var.create_fargate_demo ? {
       cluster_name = aws_ecs_cluster.fargate[0].name
       service_name = aws_ecs_service.fargate[0].name
