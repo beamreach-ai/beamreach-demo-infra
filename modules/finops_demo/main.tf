@@ -116,10 +116,16 @@ resource "aws_s3_bucket_lifecycle_configuration" "good" {
   }
 }
 
-# FinOps Remediation: Removed idle ALB resources (aws_lb.idle, aws_lb_target_group.idle,
-# aws_lb_listener.idle_http, aws_security_group.idle_alb) due to no healthy targets detected.
-# Estimated savings: ~$16.43/month (~$197/year).
+# -----------------------------------------------------------------------------
+# REMOVED: Idle ALB Resources (aws_lb.idle, aws_lb_target_group.idle,
+#          aws_lb_listener.idle_http, aws_security_group.idle_alb)
+#
+# Reason: ALB had no healthy targets and was wasting ~$16.43/month (~$197/year)
 # Finding ID: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-finops-idle-alb
+# Resource ARN: arn:aws:elasticloadbalancing:us-east-1:682684724085:loadbalancer/app/public-demo-finops-idle-alb/a702c914581a967f
+#
+# To restore: Revert this change and reapply Terraform configuration.
+# -----------------------------------------------------------------------------
 
 resource "aws_security_group" "fargate" {
   count = var.create_fargate_demo ? 1 : 0
