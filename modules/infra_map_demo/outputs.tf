@@ -18,15 +18,18 @@ output "ecs_service_name" {
   value       = aws_ecs_service.api.name
 }
 
-output "alb_dns_name" {
-  description = "DNS name of the Application Load Balancer."
-  value       = aws_lb.demo.dns_name
-}
+# COMMENTED OUT: ALB is disabled - see finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:demo-map-alb
+# Uncomment when restoring ALB infrastructure
+# output "alb_dns_name" {
+#   description = "DNS name of the Application Load Balancer."
+#   value       = aws_lb.demo.dns_name
+# }
 
 output "security_group_ids" {
-  description = "Security group IDs for the ALB and ECS tasks."
+  description = "Security group IDs for ECS tasks (ALB security group removed)."
   value = {
-    alb = aws_security_group.alb.id
+    # ALB security group removed since ALB is disabled
+    # alb = aws_security_group.alb.id
     ecs = aws_security_group.ecs_tasks.id
   }
 }
