@@ -10,7 +10,7 @@ output "inventory" {
       waste_bucket = aws_s3_bucket.waste.bucket
       good_bucket  = aws_s3_bucket.good.bucket
     }
-    # alb outputs removed - idle ALB resources deleted (no healthy targets)
+    # ALB outputs removed - idle ALB was deleted (no healthy targets, ~$197/year savings)
     fargate = var.create_fargate_demo ? {
       cluster_name = aws_ecs_cluster.fargate[0].name
       service_name = aws_ecs_service.fargate[0].name
