@@ -116,15 +116,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "good" {
   }
 }
 
-# FinOps Remediation: Removed idle ALB resources (2026-05-04)
-# Finding: finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-finops-idle-alb
-# Reason: Load balancer had no healthy targets registered
-# Estimated annual savings: ~$197 USD ($16.43/month)
-# Removed resources:
-#   - aws_security_group.idle_alb
-#   - aws_lb.idle (public-demo-finops-idle-alb)
-#   - aws_lb_target_group.idle
-#   - aws_lb_listener.idle_http
+# FinOps Remediation: Removed idle ALB resources (aws_security_group.idle_alb, aws_lb.idle,
+# aws_lb_target_group.idle, aws_lb_listener.idle_http) as part of finding:
+# finops:kosty:loadbalancer:682684724085:us-east-1:no-healthy-targets:public-demo-finops-idle-alb
+# The ALB had no healthy targets and was costing ~$197/year.
 
 resource "aws_security_group" "fargate" {
   count = var.create_fargate_demo ? 1 : 0
