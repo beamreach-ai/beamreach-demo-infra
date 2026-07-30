@@ -11,8 +11,7 @@ resource "aws_dynamodb_table" "public_demo_tf_locks" {
   billing_mode = "PAY_PER_REQUEST"
 
   # TODO: hash_key — not present in scanned attributes
-
-  # TODO: attribute blocks — not present in scanned attributes
+  # TODO: attribute — not present in scanned attributes
 }
 
 # /aws/lambda/public-demo-map-publisher
@@ -37,52 +36,52 @@ resource "aws_cloudwatch_log_group" "ecs_public_demo_demo" {
 resource "aws_security_group" "public_demo_finops_idle_alb" {
   name   = "public-demo-finops-idle-alb"
   vpc_id = "vpc-0e040db1f49390291"
-
   # TODO: description — not present in scanned attributes
-  # TODO: ingress/egress rules — not present in scanned attributes
+  # TODO: ingress — not present in scanned attributes
+  # TODO: egress — not present in scanned attributes
 }
 
 # prowler-open-rdp-public-demo
 resource "aws_security_group" "prowler_open_rdp_public_demo" {
   name   = "prowler-open-rdp-public-demo"
   vpc_id = "vpc-0e040db1f49390291"
-
   # TODO: description — not present in scanned attributes
-  # TODO: ingress/egress rules — not present in scanned attributes
+  # TODO: ingress — not present in scanned attributes
+  # TODO: egress — not present in scanned attributes
 }
 
 # prowler-open-ssh-public-demo
 resource "aws_security_group" "prowler_open_ssh_public_demo" {
   name   = "prowler-open-ssh-public-demo"
   vpc_id = "vpc-0e040db1f49390291"
-
   # TODO: description — not present in scanned attributes
-  # TODO: ingress/egress rules — not present in scanned attributes
+  # TODO: ingress — not present in scanned attributes
+  # TODO: egress — not present in scanned attributes
 }
 
 # prowler-open-all-public-demo
 resource "aws_security_group" "prowler_open_all_public_demo" {
   name   = "prowler-open-all-public-demo"
   vpc_id = "vpc-0e040db1f49390291"
-
   # TODO: description — not present in scanned attributes
-  # TODO: ingress/egress rules — not present in scanned attributes
+  # TODO: ingress — not present in scanned attributes
+  # TODO: egress — not present in scanned attributes
 }
 
 # public-demo-demo-alb
 resource "aws_security_group" "public_demo_demo_alb" {
   name   = "public-demo-demo-alb"
   vpc_id = "vpc-0e040db1f49390291"
-
   # TODO: description — not present in scanned attributes
-  # TODO: ingress/egress rules — not present in scanned attributes
+  # TODO: ingress — not present in scanned attributes
+  # TODO: egress — not present in scanned attributes
 }
 
 # public-demo-demo-tasks
 resource "aws_security_group" "public_demo_demo_tasks" {
   name   = "public-demo-demo-tasks"
   vpc_id = "vpc-0e040db1f49390291"
-
   # TODO: description — not present in scanned attributes
-  # TODO: ingress/egress rules — not present in scanned attributes
+  # TODO: ingress — not present in scanned attributes
+  # TODO: egress — not present in scanned attributes
 }
