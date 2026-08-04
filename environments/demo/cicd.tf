@@ -118,13 +118,22 @@ data "aws_iam_policy_document" "tf_apply_assume" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Pinned to main. `repo:...:*` — which the existing ECR role uses — would
-    # let any branch in the repository assume an apply role, so a pull request
-    # could change live infrastructure without review.
+    # Pinned to the deployment environment, not to a ref.
+    #
+    # When a job declares `environment:`, GitHub issues its OIDC token with
+    # sub = "repo:OWNER/REPO:environment:NAME". The ref form is not present, so
+    # requiring `ref:refs/heads/main` made this role unassumable and the apply
+    # job failed on exactly that.
+    #
+    # The branch restriction moves to the environment itself — set the "demo"
+    # environment's deployment branch policy to main only. That is at least as
+    # strong, since it also governs manual dispatches, and it composes with
+    # required reviewers. `repo:...:*`, which the pre-existing ECR role uses,
+    # would let any branch assume this; unacceptable for an apply role.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${local.github_repo}:ref:refs/heads/main"]
+      values   = ["repo:${local.github_repo}:environment:demo"]
     }
   }
 }
