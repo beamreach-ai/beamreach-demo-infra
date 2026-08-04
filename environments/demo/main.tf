@@ -1,17 +1,28 @@
+# `profile` is deliberately not set here.
+#
+# A named profile is a property of one developer's laptop, not of the
+# environment. Hardcoding "public-demo" meant CI could never authenticate — the
+# deploy workflow has failed on every run since August 2025 — because a GitHub
+# runner has no ~/.aws/config and no such profile to resolve.
+#
+# Credentials now come from the ambient chain, which works everywhere:
+#   * CI assumes a role via GitHub OIDC
+#   * locally, export AWS_PROFILE=public-demo
+#
+# Changing the backend block requires a one-off `terraform init -reconfigure`
+# in any existing working copy.
 terraform {
   backend "s3" {
     bucket         = "beamreach-public-demo-tf-states"
     key            = "public-demo/terraform-public-demo.tfstate"
     region         = "us-east-1"
-    profile        = "public-demo"
     dynamodb_table = "public-demo-tf-locks"
     encrypt        = true
   }
 }
 
 provider "aws" {
-  region  = local.aws_region
-  profile = "public-demo"
+  region = local.aws_region
 }
 
 locals {

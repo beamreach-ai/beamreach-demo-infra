@@ -138,6 +138,26 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# See the equivalent policy in modules/ecs: the task definition pulls
+# `aws_secretsmanager_secret.app_config` at start-up, and the managed execution
+# policy does not cover a named secret. Present in AWS and in state, absent from
+# configuration, so every plan wanted to destroy it.
+resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
+  name = "${var.env}-map-demo-ecs-task-execution-secrets"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.app_config.arn
+      }
+    ]
+  })
+}
+
 resource "aws_ecs_cluster" "demo" {
   name = var.cluster_name
   tags = local.tags

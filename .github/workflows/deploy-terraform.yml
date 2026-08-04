@@ -1,45 +1,126 @@
 name: Deploy Terraform
 
+# Plans on every pull request, applies only from main and only after a reviewer
+# approves the "demo" environment.
+#
+# The previous version failed on all five of its runs since August 2025: it
+# assumed a role in 662863386798 (the Beamreach control plane) while this
+# configuration targets 682684724085, and `environments/demo` pinned
+# `profile = "public-demo"`, which does not exist on a runner. It also carried
+# a stray "demo123" folder in its matrix.
+#
+# It was unconditionally `apply -auto-approve` on push. Had it ever succeeded,
+# the first green run would have destroyed six resources that had drifted out of
+# configuration — including the IAM policies both ECS services need to pull
+# their secrets at start-up. The failures were the only thing protecting this
+# environment.
+
 on:
+  pull_request:
+    paths:
+      - "environments/**"
+      - "modules/**"
+      - ".github/workflows/deploy-terraform.yml"
   push:
     branches: [main]
+    paths:
+      - "environments/**"
+      - "modules/**"
   workflow_dispatch:
 
+concurrency:
+  # Terraform holds a state lock; overlapping runs would contend for it and time
+  # out. An in-flight apply is never cancelled.
+  group: terraform-demo
+  cancel-in-progress: false
+
 env:
-  AWS_ACCOUNT_ID: 662863386798
-  AWS_REGION: eu-central-1
+  AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: "1"
+  TF_INPUT: "0"
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  terraform:
+  plan:
+    name: Plan
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        folder: ["demo123", "environments/demo"]
-
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS credentials (read-only)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-radio-user-role
+          role-to-assume: arn:aws:iam::682684724085:role/beamreach-demo-terraform-plan
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
 
-      - name: Terraform Init
-        run: terraform -chdir=${{ matrix.folder }} init
+      - run: terraform -chdir=environments/demo init
+      - run: terraform -chdir=environments/demo validate
 
-      - name: Terraform Plan
-        run: terraform -chdir=${{ matrix.folder }} plan
+      - name: Plan
+        run: |
+          terraform -chdir=environments/demo plan -no-color -lock-timeout=5m -out=tfplan
+          terraform -chdir=environments/demo show -no-color tfplan > environments/demo/plan.txt
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform -chdir=${{ matrix.folder }} apply -auto-approve
+      # A plan is only useful if someone reads it, and this repository has
+      # drifted before in ways where the dangerous line was buried in a long
+      # diff. Destroys and replacements are surfaced on their own.
+      - name: Summarise
+        run: |
+          cd environments/demo
+          {
+            echo "### Terraform plan"
+            echo '```'
+            grep -E "^(Plan:|No changes)" plan.txt || echo "(see artifact)"
+            echo '```'
+            if grep -qE "will be destroyed|must be replaced" plan.txt; then
+              echo "> [!WARNING]"
+              echo "> This plan destroys or replaces resources:"
+              echo '```'
+              grep -E "will be destroyed|must be replaced" plan.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: environments/demo/plan.txt
+          retention-days: 14
+
+  apply:
+    name: Apply
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    # Two independent gates: the apply role's trust policy accepts only
+    # refs/heads/main, and this environment can require a reviewer before the
+    # job starts. Set required reviewers on the "demo" environment in repository
+    # settings — without them this line is decoration.
+    environment: demo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (apply)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::682684724085:role/beamreach-demo-terraform-apply
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - run: terraform -chdir=environments/demo init
+
+      # Re-planned rather than applying the stored plan: that artifact may have
+      # been produced against an older commit, and applying a stale plan is how
+      # the wrong change reaches an environment.
+      - name: Apply
+        run: terraform -chdir=environments/demo apply -auto-approve -lock-timeout=5m

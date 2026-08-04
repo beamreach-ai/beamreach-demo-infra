@@ -89,6 +89,32 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# The task definition below pulls its container secret at start-up
+# (`secrets = [{ valueFrom = aws_secretsmanager_secret.app.arn }]`), and the
+# managed AmazonECSTaskExecutionRolePolicy does not grant access to a specific
+# secret. Without this, a task can be scheduled but cannot start.
+#
+# This policy already existed in AWS and in state but had been dropped from the
+# configuration, so every plan wanted to destroy it. That destroy would not have
+# broken anything immediately — running tasks keep their credentials — but the
+# next deploy, scale event or health-check replacement would have failed to pull
+# the secret, which is a far worse way to find out.
+resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
+  name = "${var.env}-ecs-task-execution-secrets"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.app.arn
+      }
+    ]
+  })
+}
+
 resource "aws_ecs_cluster" "demo_cluster" {
   name = "${var.env}-cluster"
 }
