@@ -73,6 +73,25 @@ data "aws_iam_policy_document" "tf_state_access" {
     actions   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
     resources = ["arn:aws:dynamodb:${local.aws_region}:${local.account}:table/public-demo-tf-locks"]
   }
+
+  # AWS's ReadOnlyAccess grants DescribeSecret but deliberately not
+  # GetSecretValue, and this configuration holds `aws_secretsmanager_secret_version`
+  # resources that a plan must refresh. Without this, plan fails outright.
+  #
+  # Scoped to the two secrets this environment owns rather than granted broadly:
+  # the plan role is assumable from any branch, so anything it can read, an
+  # unreviewed pull request can read. That is an acceptable trade for a demo
+  # account's own application config and would not be for anything real — an
+  # environment holding genuine credentials should pin the plan role's trust to
+  # protected branches as well.
+  statement {
+    effect  = "Allow"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "arn:aws:secretsmanager:${local.aws_region}:${local.account}:secret:public-demo/demo/app-*",
+      "arn:aws:secretsmanager:${local.aws_region}:${local.account}:secret:demo/app-config-*",
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "terraform_plan_state" {
