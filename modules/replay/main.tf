@@ -275,7 +275,7 @@ resource "aws_cloudwatch_log_group" "web" {
 
 resource "aws_security_group" "web" {
   name        = "${local.name}-web"
-  description = "Replay workload: egress to the VPC only"
+  description = "Replay workload: egress to the VPC and to S3 (image layers)"
   vpc_id      = var.vpc_id
 
   egress {
@@ -283,6 +283,15 @@ resource "aws_security_group" "web" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = [var.vpc_cidr_block]
+  }
+
+  # Image layers come from S3 through the gateway endpoint, whose addresses
+  # are outside the VPC CIDR.
+  egress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    prefix_list_ids = [aws_vpc_endpoint.s3.prefix_list_id]
   }
 
   tags = merge(local.tags, { Name = "${local.name}-web" })
