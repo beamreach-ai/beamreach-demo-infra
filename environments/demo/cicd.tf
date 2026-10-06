@@ -90,6 +90,8 @@ data "aws_iam_policy_document" "tf_state_access" {
     resources = [
       "arn:aws:secretsmanager:${local.aws_region}:${local.account}:secret:public-demo/demo/app-*",
       "arn:aws:secretsmanager:${local.aws_region}:${local.account}:secret:demo/app-config-*",
+      # The replay workload's production-looking secrets (placeholder values).
+      "arn:aws:secretsmanager:${local.aws_region}:${local.account}:secret:prod/*",
     ]
   }
 }
