@@ -111,30 +111,14 @@ module "finops_demo" {
 }
 
 
-module "demo-services" {
-  source            = "../../modules/ecs"
-  env               = local.env
-  subnet_ids        = module.beamreach-demo-vpc.private_subnets
-  public_subnet_ids = module.beamreach-demo-vpc.public_subnets
-  vpc_id            = module.beamreach-demo-vpc.vpc_id
-  container_image   = "${aws_ecr_repository.docker_images["multistage"].repository_url}:latest"
-  alarm_emails      = ["alerts@example.com"]
-}
-
-module "infra_map_demo" {
-  source             = "../../modules/infra_map_demo"
-  env                = local.env
-  vpc_id             = module.beamreach-demo-vpc.vpc_id
-  private_subnet_ids = module.beamreach-demo-vpc.private_subnets
-  public_subnet_ids  = module.beamreach-demo-vpc.public_subnets
-  container_image    = "${aws_ecr_repository.docker_images["versions"].repository_url}:latest"
-}
-
+# Kept after the infra-map demo stack was removed: these Lambdas publish the
+# account's relations into the map. The names are literals now; the cluster
+# and service they referred to no longer exist.
 module "infra_map_relations" {
   source           = "../../modules/infra_map_relations"
   env              = local.env
-  ecs_cluster_name = module.infra_map_demo.ecs_cluster_name
-  ecs_service_name = module.infra_map_demo.ecs_service_name
+  ecs_cluster_name = "demo-map-cluster"
+  ecs_service_name = "demo-map-api-svc"
 }
 
 module "iam" {
