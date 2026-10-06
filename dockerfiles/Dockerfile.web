@@ -1,0 +1,22 @@
+# The replay workload: a plain Next.js app, with the client tools an
+# application container commonly carries (a Postgres client and the AWS CLI).
+
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+COPY apps/web/package.json ./
+RUN npm install --no-audit --no-fund
+COPY apps/web/ ./
+RUN npm run build
+
+FROM node:20-bookworm-slim
+ENV NODE_ENV=production PORT=3000
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client curl unzip ca-certificates \
+  && curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m | sed 's/arm64/aarch64/').zip" -o /tmp/awscli.zip \
+  && unzip -q /tmp/awscli.zip -d /tmp && /tmp/aws/install && rm -rf /tmp/aws /tmp/awscli.zip \
+  && apt-get purge -y unzip && apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+EXPOSE 3000
+CMD ["node", "server.js"]
