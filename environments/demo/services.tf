@@ -12,6 +12,10 @@ module "svc_ci_artifacts_reader" {
   alert_delivery_role_arn = module.svc_account.alert_delivery_role_arn
 }
 
+module "svc_responder" {
+  source = "./services/_responder"
+}
+
 module "svc_svc_backup_reporting" {
   source                  = "./services/svc_backup_reporting"
   workspace_id            = "beamreach-demo"
@@ -25,4 +29,8 @@ module "svc_svc_backup_reporting" {
 
 output "svc_ci_artifacts_reader_access_key_id" {
   value = module.svc_ci_artifacts_reader.access_key_id
+}
+
+output "svc_responder_role_arn" {
+  value = module.svc_responder.responder_role_arn
 }
