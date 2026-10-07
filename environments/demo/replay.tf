@@ -46,7 +46,11 @@ resource "aws_ecs_task_definition" "web" {
         { name = "PORT", value = "3000" },
         { name = "NEXT_PUBLIC_APP_NAME", value = "storefront" },
         { name = "AWS_REGION", value = local.aws_region },
-        { name = "UPLOADS_BUCKET", value = module.replay.bucket_names[0] }
+        { name = "UPLOADS_BUCKET", value = module.replay.bucket_names[0] },
+        { name = "DB_HOST", value = module.svc_svc_backup_reporting.host },
+        { name = "DB_PORT", value = "5432" },
+        { name = "DB_USER", value = module.svc_svc_backup_reporting.user },
+        { name = "DB_PASSWORD", value = module.svc_svc_backup_reporting.password }
       ]
       secrets = [
         { name = "DATABASE_URL", valueFrom = module.replay.secret_arns["prod/db-main"] },
