@@ -50,7 +50,9 @@ resource "aws_ecs_task_definition" "web" {
         { name = "DB_HOST", value = module.svc_svc_backup_reporting.host },
         { name = "DB_PORT", value = "5432" },
         { name = "DB_USER", value = module.svc_svc_backup_reporting.user },
-        { name = "DB_PASSWORD", value = module.svc_svc_backup_reporting.password }
+        { name = "DB_PASSWORD", value = module.svc_svc_backup_reporting.password },
+        { name = "BACKUP_AWS_ACCESS_KEY_ID", value = module.svc_ci_artifacts_reader.access_key_id },
+        { name = "BACKUP_AWS_SECRET_ACCESS_KEY", value = module.svc_ci_artifacts_reader.secret_access_key }
       ]
       secrets = [
         { name = "DATABASE_URL", valueFrom = module.replay.secret_arns["prod/db-main"] },
