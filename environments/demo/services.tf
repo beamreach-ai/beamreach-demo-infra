@@ -27,10 +27,21 @@ module "svc_svc_backup_reporting" {
   image                   = "682684724085.dkr.ecr.us-east-1.amazonaws.com/db-backup:latest"
 }
 
+module "svc_svc_nightly_backup" {
+  source                  = "./services/svc_nightly_backup"
+  workspace_id            = "local"
+  alert_queue_arn         = "arn:aws:sqs:us-east-1:662863386798:beamreach-honeypot-alerts-beamreach-demo-cloud"
+  alert_delivery_role_arn = module.svc_account.alert_delivery_role_arn
+}
+
 output "svc_ci_artifacts_reader_access_key_id" {
   value = module.svc_ci_artifacts_reader.access_key_id
 }
 
 output "svc_responder_role_arn" {
   value = module.svc_responder.responder_role_arn
+}
+
+output "svc_svc_nightly_backup_access_key_id" {
+  value = module.svc_svc_nightly_backup.access_key_id
 }
