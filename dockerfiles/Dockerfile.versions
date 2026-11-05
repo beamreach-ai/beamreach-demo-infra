@@ -19,7 +19,7 @@ RUN pip install \
 
 # Install outdated system packages (for demonstration only)
 RUN apt-get update && apt-get install -y \
-    openssl=1.0.1f-1ubuntu2 \
+    openssl=3.0.20-1~deb12u2 \
     libssl1.0.0=1.0.1f-1ubuntu2 \
     && rm -rf /var/lib/apt/lists/*
 
