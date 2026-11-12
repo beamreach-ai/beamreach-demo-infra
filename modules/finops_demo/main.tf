@@ -22,8 +22,10 @@ data "aws_region" "current" {}
 resource "aws_ebs_volume" "orphan_gp2" {
   availability_zone = data.aws_subnet.private_az.availability_zone
   size              = var.gp2_volume_size_gb
-  type              = "gp2"
-  encrypted         = true
+  # Previously type = "gp2". In-place, reversible EBS Elastic Volumes
+  # modification; rollback is a one-line revert to "gp2".
+  type      = "gp3"
+  encrypted = true
 
   tags = merge(
     local.tags,
