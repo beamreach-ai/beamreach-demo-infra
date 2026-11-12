@@ -2,7 +2,7 @@
 
 module "svc_account" {
   source          = "./services/_account"
-  alert_queue_arn = "arn:aws:sqs:us-east-1:662863386798:beamreach-honeypot-alerts-beamreach-demo-cloud"
+  alert_queue_arn = "arn:aws:sqs:us-east-1:682684724085:compass-decoy-alerts-acceptance"
 }
 
 module "svc_ci_artifacts_reader" {
@@ -29,8 +29,8 @@ module "svc_svc_backup_reporting" {
 
 module "svc_svc_nightly_backup" {
   source                  = "./services/svc_nightly_backup"
-  workspace_id            = "local"
-  alert_queue_arn         = "arn:aws:sqs:us-east-1:662863386798:beamreach-honeypot-alerts-beamreach-demo-cloud"
+  workspace_id            = "acceptance"
+  alert_queue_arn         = "arn:aws:sqs:us-east-1:682684724085:compass-decoy-alerts-acceptance"
   alert_delivery_role_arn = module.svc_account.alert_delivery_role_arn
 }
 
