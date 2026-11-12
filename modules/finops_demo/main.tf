@@ -75,6 +75,33 @@ resource "aws_s3_bucket_public_access_block" "waste" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_policy" "waste_secure_transport" {
+  bucket = aws_s3_bucket.waste.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.waste.arn,
+          "${aws_s3_bucket.waste.arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.waste]
+}
+
 resource "aws_s3_bucket" "good" {
   bucket        = local.good_bucket_name
   force_destroy = true
