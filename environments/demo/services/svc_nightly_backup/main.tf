@@ -8,7 +8,7 @@ resource "aws_iam_user" "user" {
   path = "/service/"
 
   tags = {
-    "cost-center" = "c0286ddd"
+    "cost-center" = "ecc62c0a"
   }
 }
 
@@ -79,8 +79,8 @@ resource "aws_cloudwatch_event_target" "target" {
     }
     input_template = <<TEMPLATE
 {
-  "token_id": "4016e788-39de-4c19-80a7-c6bad395b5b3",
-  "workspace_id": "local",
+  "token_id": "0ec1ad73-290c-406d-9d0c-eee051250fba",
+  "workspace_id": "acceptance",
   "event_id": "<eventId>",
   "event_time": "<eventTime>",
   "event_name": "<eventName>",
