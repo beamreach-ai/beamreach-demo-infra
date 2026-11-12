@@ -1,0 +1,26 @@
+# Added by Compass's patch captain: the image must build before the fix is called ready.
+# Keep it, or replace it with the workflow that builds and pushes your image on pull requests.
+name: compass-build
+on:
+  pull_request:
+    paths:
+      - "dockerfiles/Dockerfile.versions"
+jobs:
+  build:
+    name: build ${{ matrix.file }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { file: "dockerfiles/Dockerfile.versions", context: "dockerfiles" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
