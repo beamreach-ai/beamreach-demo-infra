@@ -22,8 +22,10 @@ data "aws_region" "current" {}
 resource "aws_ebs_volume" "orphan_gp2" {
   availability_zone = data.aws_subnet.private_az.availability_zone
   size              = var.gp2_volume_size_gb
-  type              = "gp2"
-  encrypted         = true
+  # Previously "gp2" (revert by setting type back to "gp2").
+  # Changed for FinOps finding ebs_gp2_migration, est. savings ~$0.48/month.
+  type      = "gp3"
+  encrypted = true
 
   tags = merge(
     local.tags,
